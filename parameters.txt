@@ -1,0 +1,5 @@
+python train.py oxiod output
+
+python test.py oxiod "pretrained_models/6dofio_oxiod.hdf5" "Oxford Inertial Odometry Dataset/handheld/data5/syn/imu1.csv" "Oxford Inertial Odometry Dataset/handheld/data5/syn/vi1.csv"
+
+python evaluate.py oxiod pretrained_models/6dofio_oxiod.hdf5

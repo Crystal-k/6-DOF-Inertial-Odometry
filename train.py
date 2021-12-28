@@ -1,10 +1,15 @@
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"  # see issue #152
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+
 import numpy as np
 import matplotlib.pyplot as plt
 import argparse
 
-from keras.callbacks import ModelCheckpoint, TensorBoard
-from keras.models import load_model
-from keras.optimizers import Adam
+from tensorflow.keras.callbacks import ModelCheckpoint, TensorBoard
+from tensorflow.keras.models import load_model
+from tensorflow.keras.optimizers import Adam
 
 from sklearn.utils import shuffle
 
@@ -12,7 +17,8 @@ from time import time
 
 from dataset import *
 from model import *
-from util import *
+from utils import *
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -70,7 +76,7 @@ def main():
         gt_data_filenames.append('Oxford Inertial Odometry Dataset/handheld/data3/syn/vi3.csv')
         gt_data_filenames.append('Oxford Inertial Odometry Dataset/handheld/data3/syn/vi5.csv')
         gt_data_filenames.append('Oxford Inertial Odometry Dataset/handheld/data1/syn/vi4.csv')
-    
+
     elif args.dataset == 'euroc':
         imu_data_filenames.append('MH_01_easy/mav0/imu0/data.csv')
         imu_data_filenames.append('MH_03_medium/mav0/imu0/data.csv')
@@ -88,11 +94,18 @@ def main():
 
     for i, (cur_imu_data_filename, cur_gt_data_filename) in enumerate(zip(imu_data_filenames, gt_data_filenames)):
         if args.dataset == 'oxiod':
-            cur_gyro_data, cur_acc_data, cur_pos_data, cur_ori_data = load_oxiod_dataset(cur_imu_data_filename, cur_gt_data_filename)
+            cur_gyro_data, cur_acc_data, cur_pos_data, cur_ori_data = load_oxiod_dataset(cur_imu_data_filename,
+                                                                                         cur_gt_data_filename)
         elif args.dataset == 'euroc':
-            cur_gyro_data, cur_acc_data, cur_pos_data, cur_ori_data = load_euroc_mav_dataset(cur_imu_data_filename, cur_gt_data_filename)
+            cur_gyro_data, cur_acc_data, cur_pos_data, cur_ori_data = load_euroc_mav_dataset(cur_imu_data_filename,
+                                                                                             cur_gt_data_filename)
 
-        [cur_x_gyro, cur_x_acc], [cur_y_delta_p, cur_y_delta_q], init_p, init_q = load_dataset_6d_quat(cur_gyro_data, cur_acc_data, cur_pos_data, cur_ori_data, window_size, stride)
+        [cur_x_gyro, cur_x_acc], [cur_y_delta_p, cur_y_delta_q], init_p, init_q = load_dataset_6d_quat(cur_gyro_data,
+                                                                                                       cur_acc_data,
+                                                                                                       cur_pos_data,
+                                                                                                       cur_ori_data,
+                                                                                                       window_size,
+                                                                                                       stride)
 
         x_gyro.append(cur_x_gyro)
         x_acc.append(cur_x_acc)
@@ -100,11 +113,11 @@ def main():
         y_delta_p.append(cur_y_delta_p)
         y_delta_q.append(cur_y_delta_q)
 
-    x_gyro = np.vstack(x_gyro)
-    x_acc = np.vstack(x_acc)
+    x_gyro = np.vstack(x_gyro)  # [sample_num, 200, 3]
+    x_acc = np.vstack(x_acc)  # [sample_num, 200, 3]
 
-    y_delta_p = np.vstack(y_delta_p)
-    y_delta_q = np.vstack(y_delta_q)
+    y_delta_p = np.vstack(y_delta_p)  # [sample_num, 3]
+    y_delta_q = np.vstack(y_delta_q)  # [sample_num, 4]
 
     x_gyro, x_acc, y_delta_p, y_delta_q = shuffle(x_gyro, x_acc, y_delta_p, y_delta_q)
 
@@ -115,9 +128,11 @@ def main():
     model_checkpoint = ModelCheckpoint('model_checkpoint.hdf5', monitor='val_loss', save_best_only=True, verbose=1)
     tensorboard = TensorBoard(log_dir="logs/{}".format(time()))
 
-    history = train_model.fit([x_gyro, x_acc, y_delta_p, y_delta_q], epochs=500, batch_size=32, verbose=1, callbacks=[model_checkpoint, tensorboard], validation_split=0.1)
+    history = train_model.fit([x_gyro, x_acc, y_delta_p, y_delta_q], epochs=500, batch_size=32, verbose=1,
+                              callbacks=[model_checkpoint, tensorboard], validation_split=0.1)
 
-    train_model = load_model('model_checkpoint.hdf5', custom_objects={'CustomMultiLossLayer':CustomMultiLossLayer}, compile=False)
+    train_model = load_model('model_checkpoint.hdf5', custom_objects={'CustomMultiLossLayer': CustomMultiLossLayer},
+                             compile=False)
 
     pred_model = create_pred_model_6d_quat(window_size)
     pred_model.set_weights(train_model.get_weights()[:-2])
@@ -130,6 +145,7 @@ def main():
     plt.xlabel('Epoch')
     plt.legend(['Train', 'Validation'], loc='upper left')
     plt.show()
+
 
 if __name__ == '__main__':
     main()

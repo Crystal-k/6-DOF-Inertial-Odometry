@@ -1,3 +1,6 @@
+import os
+os.environ["CUDA_VISIBLE_DEVICES"]="0"
+
 import argparse
 import numpy as np
 import matplotlib.pyplot as plt
@@ -5,10 +8,12 @@ import matplotlib
 
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.animation import FuncAnimation
-from keras.models import load_model
+from tensorflow.keras.models import load_model
 
 from dataset import *
-from util import *
+from utils import *
+
+T_RES_PATH = "result/"
 
 def main():
     parser = argparse.ArgumentParser()
@@ -39,31 +44,36 @@ def main():
     pred_trajectory = generate_trajectory_6d_quat(init_p, init_q, yhat_delta_p, yhat_delta_q)
 
     if args.dataset == 'oxiod':
-        gt_trajectory = gt_trajectory[0:200, :]
+        gt_trajectory = gt_trajectory[0:201, :]
 
-    matplotlib.rcParams.update({'font.size': 18})
-    fig = plt.figure(figsize=[14.4, 10.8])
-    ax = fig.gca(projection='3d')
-    ax.plot(gt_trajectory[:, 0], gt_trajectory[:, 1], gt_trajectory[:, 2])
-    ax.plot(pred_trajectory[:, 0], pred_trajectory[:, 1], pred_trajectory[:, 2])
-    ax.set_xlabel('X (m)')
-    ax.set_ylabel('Y (m)')
-    ax.set_zlabel('Z (m)')
-    min_x = np.minimum(np.amin(gt_trajectory[:, 0]), np.amin(pred_trajectory[:, 0]))
-    min_y = np.minimum(np.amin(gt_trajectory[:, 1]), np.amin(pred_trajectory[:, 1]))
-    min_z = np.minimum(np.amin(gt_trajectory[:, 2]), np.amin(pred_trajectory[:, 2]))
-    max_x = np.maximum(np.amax(gt_trajectory[:, 0]), np.amax(pred_trajectory[:, 0]))
-    max_y = np.maximum(np.amax(gt_trajectory[:, 1]), np.amax(pred_trajectory[:, 1]))
-    max_z = np.maximum(np.amax(gt_trajectory[:, 2]), np.amax(pred_trajectory[:, 2]))
-    range_x = np.absolute(max_x - min_x)
-    range_y = np.absolute(max_y - min_y)
-    range_z = np.absolute(max_z - min_z)
-    max_range = np.maximum(np.maximum(range_x, range_y), range_z)
-    ax.set_xlim(min_x, min_x + max_range)
-    ax.set_ylim(min_y, min_y + max_range)
-    ax.set_zlim(min_z, min_z + max_range)
-    ax.legend(['ground truth', 'predicted'], loc='upper right')
-    plt.show()
+    # matplotlib.rcParams.update({'font.size': 18})
+    # fig = plt.figure(figsize=[14.4, 10.8])
+    # ax = fig.gca(projection='3d')
+    # ax.plot(gt_trajectory[:, 0], gt_trajectory[:, 1], gt_trajectory[:, 2])
+    # ax.plot(pred_trajectory[:, 0], pred_trajectory[:, 1], pred_trajectory[:, 2])
+    # ax.set_xlabel('X (m)')
+    # ax.set_ylabel('Y (m)')
+    # ax.set_zlabel('Z (m)')
+    # min_x = np.minimum(np.amin(gt_trajectory[:, 0]), np.amin(pred_trajectory[:, 0]))
+    # min_y = np.minimum(np.amin(gt_trajectory[:, 1]), np.amin(pred_trajectory[:, 1]))
+    # min_z = np.minimum(np.amin(gt_trajectory[:, 2]), np.amin(pred_trajectory[:, 2]))
+    # max_x = np.maximum(np.amax(gt_trajectory[:, 0]), np.amax(pred_trajectory[:, 0]))
+    # max_y = np.maximum(np.amax(gt_trajectory[:, 1]), np.amax(pred_trajectory[:, 1]))
+    # max_z = np.maximum(np.amax(gt_trajectory[:, 2]), np.amax(pred_trajectory[:, 2]))
+    # range_x = np.absolute(max_x - min_x)
+    # range_y = np.absolute(max_y - min_y)
+    # range_z = np.absolute(max_z - min_z)
+    # max_range = np.maximum(np.maximum(range_x, range_y), range_z)
+    # ax.set_xlim(min_x, min_x + max_range)
+    # ax.set_ylim(min_y, min_y + max_range)
+    # ax.set_zlim(min_z, min_z + max_range)
+    # ax.legend(['ground truth', 'predicted'], loc='upper right')
+    # plt.show()
+    header = ['real_x', 'real_y', 'real_z', 'prediction_x', 'prediction_y', 'prediction_z']
+    data = np.hstack((gt_trajectory, pred_trajectory))
+    filename = "6dof_io_xyz.csv"
+    save_result(T_RES_PATH + filename, data, header)
+    print("save finished!")
 
 if __name__ == '__main__':
     main()

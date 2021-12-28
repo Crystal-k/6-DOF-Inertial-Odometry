@@ -1,0 +1,7 @@
+/Oxford Inertial Odometry Dataset/
+*.idea/
+/pretrained_models/
+/__pycache__/
+/result/
+
+

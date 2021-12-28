@@ -1,3 +1,4 @@
+import csv
 import numpy as np
 import quaternion
 
@@ -32,3 +33,10 @@ def generate_trajectory_3d(init_l, init_theta, init_psi, y_delta_l, y_delta_thet
         pred_l.append(np.array(cur_l))
 
     return np.reshape(pred_l, (len(pred_l), 3))
+
+
+def save_result(file, data, header):
+    with open(file, 'w') as csv_file:
+        my_writer = csv.writer(csv_file)
+        my_writer.writerow(header)
+        my_writer.writerows(data)

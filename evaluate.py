@@ -1,13 +1,13 @@
+import os
+os.environ["CUDA_VISIBLE_DEVICES"]="0"
+
 import argparse
-import numpy as np
 
 from keras.models import load_model
-from sklearn.preprocessing import MinMaxScaler
-from sklearn.externals import joblib
 
 from dataset import *
-from util import *
-from model import *
+from utils import *
+
 
 def main():
     parser = argparse.ArgumentParser()
